@@ -1,7 +1,9 @@
 import tensorflow as tf
 import tensorflow.keras.layers as layers
 import numpy as np
+from keras.saving import register_keras_serializable
 
+@register_keras_serializable()
 class EmbeddingLayer(layers.Layer):
     def __init__(self, vocab_size, embedding_dim, **kwargs):
         super().__init__(**kwargs)
@@ -28,7 +30,8 @@ class EmbeddingLayer(layers.Layer):
             "embedding_dim": self.embedding_dim,
         })
         return config
-    
+
+@register_keras_serializable()
 class PositionalEncodingLayer(layers.Layer):
     def __init__(self, max_len, d_model, **kwargs):
         super().__init__(**kwargs)
@@ -72,7 +75,7 @@ class PositionalEncodingLayer(layers.Layer):
         return config
     
 
-
+@register_keras_serializable()
 class ScaledDotProductAttentionLayer(layers.Layer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -109,7 +112,7 @@ class ScaledDotProductAttentionLayer(layers.Layer):
         return config
     
 
-
+@register_keras_serializable()
 class MultiHeadAttentionLayer(layers.Layer):
     def __init__(self, d_model, num_heads, **kwargs):
         super().__init__(**kwargs)
@@ -175,7 +178,7 @@ class MultiHeadAttentionLayer(layers.Layer):
         return config
     
     
-
+@register_keras_serializable()
 class LayerNormalization(layers.Layer):
     def __init__(self, epsilon=1e-6, **kwargs):
         super().__init__(**kwargs)
@@ -214,7 +217,7 @@ class LayerNormalization(layers.Layer):
         return config
     
 
-
+@register_keras_serializable()
 class PositionwiseFeedForwardLayer(layers.Layer):
     def __init__(self, d_model, d_ff, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)
@@ -268,7 +271,7 @@ def create_masks(inp, tar):
 
     return enc_padding_mask, combined_mask, dec_padding_mask
 
-
+@register_keras_serializable()
 class TransformerEncoderLayer(layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)
@@ -313,7 +316,7 @@ class TransformerEncoderLayer(layers.Layer):
         })
         return config
     
-
+@register_keras_serializable()
 class TransformerDecoderLayer(layers.Layer):
     def __init__(self, d_model, num_heads, d_ff, dropout_rate=0.1, **kwargs):
         super().__init__(**kwargs)

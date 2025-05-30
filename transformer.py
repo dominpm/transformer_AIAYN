@@ -1,5 +1,7 @@
 from custom_layers import *
+from keras.saving import register_keras_serializable
 
+@register_keras_serializable()
 class Transformer(tf.keras.Model):
     def __init__(self, num_encoder_layers, num_decoder_layers, d_model, num_heads, d_ff,
                  input_vocab_size, target_vocab_size, max_positional_encoding_input,
@@ -45,17 +47,11 @@ class Transformer(tf.keras.Model):
     def call(self, inp, tar, training=False):
         """
         inp: (batch_size, input_seq_len)
-        tar: (batch_size, target_seq_len)
+        tar: (batch_size, target_seq_len) → should be tar_inp externally
         """
+        enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar)
 
-        # 1. Preparamos el tar para el decoder
-        tar_inp = tar[:, :-1]  # Todo excepto el último token
-        tar_real = tar[:, 1:]  # Todo excepto el primero (para loss)
-
-        # 2. Crear máscaras basadas en tar_inp
-        enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar_inp)
-
-        # 3. Encoder
+        # Encoder
         enc_output = self.encoder_embedding(inp)
         enc_output = self.positional_encoding_encoder(enc_output)
         enc_output = self.dropout_enc(enc_output, training=training)
@@ -63,19 +59,40 @@ class Transformer(tf.keras.Model):
         for enc_layer in self.encoder_layers:
             enc_output = enc_layer(enc_output, training=training, mask=enc_padding_mask)
 
-        # 4. Decoder
-        dec_output = self.decoder_embedding(tar_inp)
+        # Decoder
+        dec_output = self.decoder_embedding(tar)
         dec_output = self.positional_encoding_decoder(dec_output)
         dec_output = self.dropout_dec(dec_output, training=training)
 
         for dec_layer in self.decoder_layers:
             dec_output = dec_layer(dec_output, enc_output, training=training,
-                                   look_ahead_mask=combined_mask, padding_mask=dec_padding_mask)
+                                look_ahead_mask=combined_mask, padding_mask=dec_padding_mask)
 
-        # 5. Output final
-        final_output = self.final_layer(dec_output)  # (batch_size, tar_seq_len - 1, vocab_size)
+        final_output = self.final_layer(dec_output)  # (batch_size, tar_seq_len, vocab_size)
+        return final_output  
 
-        return final_output, tar_real
+
+    # def build(self, input_shape):
+    #     encoder_input_shape, decoder_input_shape = input_shape
+
+    #     self.encoder_embedding.build(encoder_input_shape)
+    #     self.decoder_embedding.build(decoder_input_shape)
+
+    #     self.positional_encoding_encoder.build(encoder_input_shape)
+    #     self.positional_encoding_decoder.build(decoder_input_shape)
+
+    #     for layer in self.encoder_layers:
+    #         layer.build(encoder_input_shape)
+
+    #     for layer in self.decoder_layers:
+    #         layer.build([decoder_input_shape, encoder_input_shape])
+
+    #     self.final_layer.build((decoder_input_shape[0], decoder_input_shape[1], self.d_model))
+
+    #     self.dropout_enc.build(encoder_input_shape)
+    #     self.dropout_dec.build(decoder_input_shape)
+
+    #     super().build(input_shape)
 
     def get_config(self):
         config = super().get_config()
@@ -92,3 +109,7 @@ class Transformer(tf.keras.Model):
             "dropout_rate": self.dropout_rate,
         })
         return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
