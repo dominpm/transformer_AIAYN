@@ -48,7 +48,7 @@ def translate(sentence: str,
 
     return tgt_tokenizer.decode(result_ids)
 
-model_path = '/home/asidpm/transformer_dpm/transformer_AIAYN/artifacts/transformer/train_checkpoints/weights/weights_model_epoch23_valacc0.4206.weights.h5'
+model_path = './artifacts/transformer/train_checkpoints/weights/weights_model_epoch23_valacc0.4206.weights.h5'
 automated_translation_transformer = Transformer(**params_config)
 dummy_encoder_input = tf.zeros((1, 10), dtype=tf.int32)
 dummy_decoder_input = tf.zeros((1, 9), dtype=tf.int32)
